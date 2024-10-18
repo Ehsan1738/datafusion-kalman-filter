@@ -25,11 +25,14 @@ def accel_to_eul(x, y, z):
     pitch = np.arcsin(x / g) 
     roll = np.arcsin(-y / (g * np.cos(pitch)))
     
-    return roll, pitch
+    return [roll, pitch]
 
 #in this function i change the euler angles into quaternion to make it easy for the kalman filter, sinds the matrix from euler 
 # gives problems when the angle is on the +/- 90 degress. 
-def eul_to_quater(roll, pitch):
+def eul_to_quater(euler):
+    roll = np.array(euler) @ [1, 0, 0]
+    pitch = np.array(euler) @ [0, 1, 0]
+
     return [
         np.cos(roll / 2) * np.cos(pitch / 2) + np.sin(roll / 2) * np.sin(pitch / 2),
         np.sin(roll / 2) * np.cos(pitch / 2) - np.cos(roll / 2) * np.sin(pitch / 2),
@@ -40,8 +43,12 @@ def eul_to_quater(roll, pitch):
 
 #when the filter is done it gives us a quaternion as answer. these matrices should be converted back into euler angels. 
 def quater_to_euler(lijst):
-    a, b, c, d = np.array(lijst)
-    
+    #a, b, c, d = np.array(lijst)
+    a = np.array(lijst) @ [1, 0, 0, 0]
+    b = np.array(lijst) @ [0, 1, 0, 0]
+    c = np.array(lijst) @ [0, 0, 1, 0]
+    d = np.array(lijst) @ [0, 0, 0, 1]
+
     return [np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d)), 
             np.arcsin(2 * (a * c - d * b))
             ]
@@ -62,7 +69,9 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
     Pk_predict = np.linalg.inv((A @ p_zero @ A.T) + Q)
     k_gain = Pk_predict @  np.linalg.inv(Pk_predict + R)
     roll, pitch = accel_to_eul(x, y, z)  
-    z = eul_to_quater(roll, pitch)
+    euler = [roll, pitch, 0]
+    
+    z = eul_to_quater(euler)
 
     xhat_new = xhat_predict + k_gain @ (z - xhat_predict)
     xhat_new /= np.linalg.norm(xhat_new)
@@ -105,20 +114,20 @@ with open("Assignment_gyroaccel.csv", mode='r', newline='') as file:
         rolls.append(angles[0])
         pitches.append(angles[1])
 
-        j += 1  # Increment j for the next iteration
+        j += 1  
 
 
 # Create stacked plots for Roll and Pitch angles
 fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
-# Plot Roll angles from Kalman filter, accelerometer, and gyroscope
+# Plot Roll angles from Kalman filter
 axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
 axs[0].set_title('Roll Angle ')
 axs[0].set_ylabel('Roll Angle (degrees)')
 axs[0].grid()
 axs[0].legend()
 
-# Plot Pitch angles from Kalman filter, accelerometer, and gyroscope
+# Plot Pitch angles from Kalman filter
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
 axs[1].set_title('Pitch Angle')
 axs[1].set_xlabel('Sample Number')
