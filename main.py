@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 #Variables for the kalman filter
 Tot_sample = 20000
-dt = 0.01
+dt = 0.1
 H = np.identity(4)
 xhat_zero = [1, 0, 0, 0]
 
@@ -40,14 +40,11 @@ def eul_to_quater(roll, pitch):
 
 #when the filter is done it gives us a quaternion as answer. these matrices should be converted back into euler angels. 
 def quater_to_euler(lijst):
-    a = np.array(lijst[0])
-    b = np.array(lijst[1])
-    c = np.array(lijst[2])
-    d = np.array(lijst[3])
-
-    roll = np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d))
-    pitch = np.arcsin(2 * (a * c - d * b))
-    return roll, pitch 
+    a, b, c, d = np.array(lijst)
+    
+    return [np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d)), 
+            np.arcsin(2 * (a * c - d * b))
+            ]
 
 
 # this is the kalman filter that takes data from gyro and accelerometer and gives a prediction of the next angle 
