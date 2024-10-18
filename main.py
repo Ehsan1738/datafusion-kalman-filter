@@ -22,10 +22,6 @@ rolls, pitches = [], []
 # this function takes three values and gives the roll and pitch angles.  
 def accel_to_eul(x, y, z):
     g = 9.81 
-    x = np.array(x, dtype=float)
-    y = np.array(y, dtype=float)
-    z = np.array(z, dtype=float)
-
     pitch = np.arcsin(x / g) 
     roll = np.arcsin(-y / (g * np.cos(pitch)))
     
@@ -44,7 +40,11 @@ def eul_to_quater(roll, pitch):
 
 #when the filter is done it gives us a quaternion as answer. these matrices should be converted back into euler angels. 
 def quater_to_euler(lijst):
-    a, b, c, d = np.array(lijst)
+    a = np.array(lijst[0])
+    b = np.array(lijst[1])
+    c = np.array(lijst[2])
+    d = np.array(lijst[3])
+
     roll = np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d))
     pitch = np.arcsin(2 * (a * c - d * b))
     return roll, pitch 
@@ -77,11 +77,11 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
 
 #this is my main loop that reads the csv file. after unpacking the data I use the while loop to calculate the 
 #last result filtered by the kalmanfilter. 
-with open("Assignment_gyroaccel.csv", mode='r', newline='', encoding='utf-8-sig') as file: 
+with open("Assignment_gyroaccel.csv", mode='r', newline='') as file: 
     data = csv.reader(file, delimiter=";") 
     j = 0 
     p, q, r, x, y, z = [], [], [], [], [], []   
-    gyro_roll, gyro_pitch = 0, 0
+    
     next(data)
     while j < Tot_sample:
         row = next(data)  # Read the next row of data
@@ -102,11 +102,11 @@ with open("Assignment_gyroaccel.csv", mode='r', newline='', encoding='utf-8-sig'
 
         # the result of the filter is set back into euler angles
         angles = quater_to_euler(xhat_zero)
-        roll_degrees = np.degrees(angles[0])
-        pitches_degress = np.degrees(angles[1])
+        #roll_degrees = np.degrees(angles[0])
+        #pitches_degress = np.degrees(angles[1])
 
-        rolls.append(roll_degrees)
-        pitches.append(pitches_degress)
+        rolls.append(angles[0])
+        pitches.append(angles[1])
 
         j += 1  # Increment j for the next iteration
 
@@ -116,14 +116,14 @@ fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
 # Plot Roll angles from Kalman filter, accelerometer, and gyroscope
 axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
-axs[0].set_title('Roll Angle Comparison')
+axs[0].set_title('Roll Angle ')
 axs[0].set_ylabel('Roll Angle (degrees)')
 axs[0].grid()
 axs[0].legend()
 
 # Plot Pitch angles from Kalman filter, accelerometer, and gyroscope
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
-axs[1].set_title('Pitch Angle Comparison')
+axs[1].set_title('Pitch Angle')
 axs[1].set_xlabel('Sample Number')
 axs[1].set_ylabel('Pitch Angle (degrees)')
 axs[1].grid()
