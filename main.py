@@ -10,20 +10,13 @@ Tot_sample = 20000
 dt = 0.01
 H = np.identity(4)
 xhat_zero = [1, 0, 0, 0]
-p_zero = np.identity(4)
-Q = [[10**-4, 0, 0, 0],
-     [0, 10**-4, 0, 0],
-     [0, 0, 10**-4, 0],
-     [0, 0, 0, 10**-4]]
 
-R = [[1, 0, 0, 0],
-     [0, 1, 0, 0],
-     [0, 0, 1, 0,],
-     [0, 0, 0, 1]]
+p_zero = np.identity(4)
+Q = np.identity(4) * 10**-4
+
+R = np.identity(4) * 10
 
 rolls, pitches = [], []
-rolls_accel, pitches_accel = [], []
-rolls_gyro, pitches_gyro = [], []
 
 # at first I change the raw accelerometer data into the eulers angles. 
 # this function takes three values and gives the roll and pitch angles.  
@@ -68,15 +61,17 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
     
     xhat_predict = A @ xhat_zero
     xhat_predict /= np.linalg.norm(xhat_predict)
+
     Pk_predict = np.linalg.inv((A @ p_zero @ A.T) + Q)
     k_gain = Pk_predict @  np.linalg.inv(Pk_predict + R)
     roll, pitch = accel_to_eul(x, y, z)  
     z = eul_to_quater(roll, pitch)
-    xhat_new = xhat_predict + k_gain @ (z - xhat_predict)
 
+    xhat_new = xhat_predict + k_gain @ (z - xhat_predict)
     xhat_new /= np.linalg.norm(xhat_new)
+
     PK = Pk_predict - k_gain @ Pk_predict
-    #PK /= np.linalg.norm(PK)
+    
     return [xhat_new, PK]
 
 
@@ -107,19 +102,11 @@ with open("Assignment_gyroaccel.csv", mode='r', newline='', encoding='utf-8-sig'
 
         # the result of the filter is set back into euler angles
         angles = quater_to_euler(xhat_zero)
-        rolls.append(angles[0])
-        pitches.append(angles[1])
-        
-        #roll and pitch for accelerometer. these are used to showcase the differance. 
-        accel_roll, accel_pitch = accel_to_eul(x[j], y[j], z[j])
-        rolls_accel.append(accel_roll)
-        pitches_accel.append(accel_pitch)
+        roll_degrees = np.degrees(angles[0])
+        pitches_degress = np.degrees(angles[1])
 
-        # roll and pitch for gyroscopen 
-        gyro_roll += p[j] * dt
-        gyro_pitch += q[j] * dt
-        rolls_gyro.append(gyro_roll)
-        pitches_gyro.append(gyro_pitch)
+        rolls.append(roll_degrees)
+        pitches.append(pitches_degress)
 
         j += 1  # Increment j for the next iteration
 
@@ -129,8 +116,6 @@ fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
 # Plot Roll angles from Kalman filter, accelerometer, and gyroscope
 axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
-#axs[0].plot(np.degrees(rolls_accel), label='Roll (Accelerometer)', color='cyan', linestyle='--')
-#axs[0].plot(np.degrees(rolls_gyro), label='Roll (Gyroscope)', color='green', linestyle='-.')
 axs[0].set_title('Roll Angle Comparison')
 axs[0].set_ylabel('Roll Angle (degrees)')
 axs[0].grid()
@@ -138,8 +123,6 @@ axs[0].legend()
 
 # Plot Pitch angles from Kalman filter, accelerometer, and gyroscope
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
-#axs[1].plot(np.degrees(pitches_accel), label='Pitch (Accelerometer)', color='red', linestyle='--')
-#axs[1].plot(np.degrees(pitches_gyro), label='Pitch (Gyroscope)', color='purple', linestyle='-.')
 axs[1].set_title('Pitch Angle Comparison')
 axs[1].set_xlabel('Sample Number')
 axs[1].set_ylabel('Pitch Angle (degrees)')
