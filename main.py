@@ -24,7 +24,7 @@ def accel_to_eul(x, y, z):
     g = 9.81 
     pitch = np.arcsin(x / g) 
     roll = np.arcsin(-y / (g * np.cos(pitch)))
-    
+   
     return [roll, pitch]
 
 #in this function i change the euler angles into quaternion to make it easy for the kalman filter, sinds the matrix from euler 
