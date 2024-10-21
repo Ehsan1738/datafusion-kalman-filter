@@ -92,7 +92,6 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
     
     return [xhat_new, PK]
 
-'''
 #this is my main loop that reads the csv file. after unpacking the data I use the while loop to calculate the 
 #last result filtered by the kalmanfilter. 
 with open("Assignment_gyroaccel.csv", mode='r', newline='') as file: 
@@ -142,6 +141,7 @@ axs[0].legend()
   
 # Plot Pitch angles from Kalman filter
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
+axs[1].plot(np.degrees(q), label='Pitch (Kalman)', color='red')
 axs[1].set_title('Pitch Angle')
 axs[1].set_xlabel('Sample Number')
 axs[1].set_ylabel('Pitch Angle (degrees)')
@@ -150,12 +150,13 @@ axs[1].legend()
 
 plt.tight_layout()
 plt.show()
-'''
 
+
+'''
 test= np.array([np.pi, -np.pi/2, -np.pi])
 print(test)
 print(quater_to_euler(eul_to_quater(test)))
-
+'''
       
         
         
