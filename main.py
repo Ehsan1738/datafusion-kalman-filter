@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 #Variables for the kalman filter
 Tot_sample = 20000
-dt = 0.1
+dt = 0.01
 H = np.identity(4)
 xhat_zero = [1, 0, 0, 0]
 
@@ -32,26 +32,38 @@ def accel_to_eul(x, y, z):
 def eul_to_quater(euler):
     roll = np.array(euler) @ [1, 0, 0]
     pitch = np.array(euler) @ [0, 1, 0]
+    yaw = np.array(euler) @ [0, 0, 1]
+
+    # print(roll, pitch)
 
     return [
-        np.cos(roll / 2) * np.cos(pitch / 2) + np.sin(roll / 2) * np.sin(pitch / 2),
-        np.sin(roll / 2) * np.cos(pitch / 2) - np.cos(roll / 2) * np.sin(pitch / 2),
-        np.cos(roll / 2) * np.sin(pitch / 2) + np.sin(roll / 2) * np.cos(pitch / 2),
-        np.cos(roll / 2) * np.cos(pitch / 2) - np.sin(roll / 2) * np.sin(pitch / 2)
+        np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw/2) + np.sin(roll / 2) * np.sin(pitch / 2) * np.sin(yaw/2),
+        np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw/2) - np.cos(roll / 2) * np.sin(pitch / 2) * np.sin(yaw/2),
+        np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw/2) + np.sin(roll / 2) * np.cos(pitch / 2) * np.sin(yaw/2),
+        np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw/2) - np.sin(roll / 2) * np.sin(pitch / 2) * np.cos(yaw/2)
     ]
     
 
 #when the filter is done it gives us a quaternion as answer. these matrices should be converted back into euler angels. 
 def quater_to_euler(lijst):
-    #a, b, c, d = np.array(lijst)
-    a = np.array(lijst) @ [1, 0, 0, 0]
-    b = np.array(lijst) @ [0, 1, 0, 0]
-    c = np.array(lijst) @ [0, 0, 1, 0]
-    d = np.array(lijst) @ [0, 0, 0, 1]
+    a, b, c, d = lijst
+    # a = np.array(lijst) @ [1, 0, 0, 0]
+    # b = np.array(lijst) @ [0, 1, 0, 0]
+    # c = np.array(lijst) @ [0, 0, 1, 0]
+    # d = np.array(lijst) @ [0, 0, 0, 1]
 
-    return [np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d)), 
-            np.arcsin(2 * (a * c - d * b))
-            ]
+    # print(a, b, c, d)
+
+    # print("a*c", a*c)
+    # print("d*b", d*b)
+    # print("2(a*c-d*b)", 2*(a*c-d*b))
+
+    return np.array([#np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d)), 
+            np.arctan2(2 * (a * b + c * d), a**2 - b**2 - c**2 + d**2),
+            np.arcsin(np.round(2 * (a * c - d * b), 8)),
+            np.arctan2(2 * (a * d + b * c), a**2 + b**2 - c**2 - d**2)
+            ])
+
 
 
 # this is the kalman filter that takes data from gyro and accelerometer and gives a prediction of the next angle 
@@ -80,7 +92,7 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
     
     return [xhat_new, PK]
 
-
+'''
 #this is my main loop that reads the csv file. after unpacking the data I use the while loop to calculate the 
 #last result filtered by the kalmanfilter. 
 with open("Assignment_gyroaccel.csv", mode='r', newline='') as file: 
@@ -122,11 +134,12 @@ fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
 # Plot Roll angles from Kalman filter
 axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
+axs[0].plot(np.degrees(p), label='origineel', color='red')
 axs[0].set_title('Roll Angle ')
 axs[0].set_ylabel('Roll Angle (degrees)')
 axs[0].grid()
 axs[0].legend()
-
+  
 # Plot Pitch angles from Kalman filter
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
 axs[1].set_title('Pitch Angle')
@@ -137,6 +150,12 @@ axs[1].legend()
 
 plt.tight_layout()
 plt.show()
+'''
+
+test= np.array([np.pi, -np.pi/2, -np.pi])
+print(test)
+print(quater_to_euler(eul_to_quater(test)))
+
       
         
         
