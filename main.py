@@ -34,8 +34,6 @@ def eul_to_quater(euler):
     pitch = np.array(euler) @ [0, 1, 0]
     yaw = np.array(euler) @ [0, 0, 1]
 
-    # print(roll, pitch)
-
     return [
         np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw/2) + np.sin(roll / 2) * np.sin(pitch / 2) * np.sin(yaw/2),
         np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw/2) - np.cos(roll / 2) * np.sin(pitch / 2) * np.sin(yaw/2),
@@ -47,16 +45,6 @@ def eul_to_quater(euler):
 #when the filter is done it gives us a quaternion as answer. these matrices should be converted back into euler angels. 
 def quater_to_euler(lijst):
     a, b, c, d = lijst
-    # a = np.array(lijst) @ [1, 0, 0, 0]
-    # b = np.array(lijst) @ [0, 1, 0, 0]
-    # c = np.array(lijst) @ [0, 0, 1, 0]
-    # d = np.array(lijst) @ [0, 0, 0, 1]
-
-    # print(a, b, c, d)
-
-    # print("a*c", a*c)
-    # print("d*b", d*b)
-    # print("2(a*c-d*b)", 2*(a*c-d*b))
 
     return np.array([#np.arctan2((a**2 - b**2 - c**2 + d**2), 2*(a*b + c*d)), 
             np.arctan2(2 * (a * b + c * d), a**2 - b**2 - c**2 + d**2),
@@ -70,15 +58,15 @@ def quater_to_euler(lijst):
 # and the it updates the eror. 
 def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
 
-    A = H @ ((dt/2) * np.array([[0, -p, -q, -r],
+    A = H + ((dt/2) * np.array([[0, -p, -q, -r],
                                 [p, 0, r, -q],
                                 [q, -r, 0, p],
                                 [r, q, -p, 0]]))
     
     xhat_predict = A @ xhat_zero
-    xhat_predict /= np.linalg.norm(xhat_predict)
+    #xhat_predict /= np.linalg.norm(xhat_predict)
 
-    Pk_predict = np.linalg.inv((A @ p_zero @ A.T) + Q)
+    Pk_predict = (A @ p_zero @ A.T) + Q
     k_gain = Pk_predict @  np.linalg.inv(Pk_predict + R)
     roll, pitch = accel_to_eul(x, y, z)  
     euler = [roll, pitch, 0]
@@ -86,7 +74,7 @@ def kalman_filter(p, q, r, x, y, z, xhat_zero, p_zero, Q, R):
     z = eul_to_quater(euler)
 
     xhat_new = xhat_predict + k_gain @ (z - xhat_predict)
-    xhat_new /= np.linalg.norm(xhat_new)
+    #xhat_new /= np.linalg.norm(xhat_new)
 
     PK = Pk_predict - k_gain @ Pk_predict
     
@@ -132,16 +120,18 @@ with open("Assignment_gyroaccel.csv", mode='r', newline='') as file:
 fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
 # Plot Roll angles from Kalman filter
-axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
+
 axs[0].plot(np.degrees(p), label='origineel', color='red')
+axs[0].plot(np.degrees(rolls), label='Roll (Kalman)', color='blue')
 axs[0].set_title('Roll Angle ')
 axs[0].set_ylabel('Roll Angle (degrees)')
 axs[0].grid()
 axs[0].legend()
   
 # Plot Pitch angles from Kalman filter
+
+axs[1].plot(np.degrees(q), label='Pitch origineel', color='red')
 axs[1].plot(np.degrees(pitches), label='Pitch (Kalman)', color='orange')
-axs[1].plot(np.degrees(q), label='Pitch (Kalman)', color='red')
 axs[1].set_title('Pitch Angle')
 axs[1].set_xlabel('Sample Number')
 axs[1].set_ylabel('Pitch Angle (degrees)')
@@ -151,13 +141,7 @@ axs[1].legend()
 plt.tight_layout()
 plt.show()
 
-
-'''
-test= np.array([np.pi, -np.pi/2, -np.pi])
-print(test)
-print(quater_to_euler(eul_to_quater(test)))
-'''
-      
+  
         
         
 
